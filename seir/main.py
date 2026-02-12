@@ -1,20 +1,21 @@
+from simulation import SEIRParameters, SEIRInitialConditions, simulate_seir
+from viz import plot_results
 import matplotlib.pyplot as plt
 
-from simulation.simulator import simulate_seir
-from viz.plot_seir import plot_results
+
 
 
 if __name__ == "__main__":
 
 
-    parameters = (3, 0.5, 0.5)
+    parameters = SEIRParameters(beta=3.0, sigma=0.5, gamma=0.5)
 
     # S0, E0, I0, R0
-    inits = (9999., 1., 0., 0.)
+    inits = SEIRInitialConditions(s0=9999.0, e0=1.0, i0=0.0, r0=0.0)
 
     ### Your code here
-    sim = simulate_seir(parameters, inits, 100)
+    s, e, i, r = simulate_seir(parameters, inits, days=100)
 
     ### Expected result
-    f = plot_results(sim[2])
+    fig = plot_results(i)
     plt.show()
