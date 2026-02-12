@@ -1,28 +1,62 @@
+from __future__ import annotations
 
-def simulate_seir(parameters, init_conditions, days=51):
-    """TODO"""
+from dataclasses import dataclass
+from typing import Tuple
 
-    # Extract parameters and initial conditions (Your code here)
-    beta, sigma, gamma = parameters
-    S0, E0, I0, R0 = init_conditions
-    N = S0 + E0 + I0 + R0
-    S = [S0] + [None] * (days-1)
-    E = [E0] + [None] * (days-1)
-    I = [I0] + [None] * (days-1)
-    R = [R0] + [None] * (days-1)
-    
-    # For each day, perform SEIR update
+import numpy as np
+from numpy.typing import NDArray
+
+
+FloatArray = NDArray[np.float64]
+
+
+@dataclass(frozen=True)
+class SEIRParameters:
+    beta: float = 3.0
+    sigma: float = 0.5
+    gamma: float = 0.5
+
+
+@dataclass(frozen=True)
+class SEIRInitialConditions:
+    s0: float = 9999.0
+    e0: float = 1.0
+    i0: float = 0.0
+    r0: float = 0.0
+
+
+def simulate_seir(
+    parameters: SEIRParameters = SEIRParameters(),
+    init_conditions: SEIRInitialConditions = SEIRInitialConditions(),
+    days: int = 51,
+) -> Tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
+    """Simulate an SEIR model and return (S, E, I, R) arrays."""
+    if days <= 0:
+        raise ValueError("days must be a positive integer")
+
+    beta, sigma, gamma = parameters.beta, parameters.sigma, parameters.gamma
+    s0, e0, i0, r0 = init_conditions.s0, init_conditions.e0, init_conditions.i0, init_conditions.r0
+
+    n = s0 + e0 + i0 + r0
+    if n <= 0:
+        raise ValueError("Total population must be positive")
+
+    s: FloatArray = np.empty(days, dtype=np.float64)
+    e: FloatArray = np.empty(days, dtype=np.float64)
+    i: FloatArray = np.empty(days, dtype=np.float64)
+    r: FloatArray = np.empty(days, dtype=np.float64)
+
+    s[0], e[0], i[0], r[0] = s0, e0, i0, r0
+
     for t in range(1, days):
+        e_new = (beta * s[t - 1] * i[t - 1]) / n
+        i_new = sigma * e[t - 1]
+        r_new = gamma * i[t - 1]
 
-        # Compute new cases and update equations
-        E_new = (beta*S[t-1]*I[t-1]) / N
-        I_new = sigma*E[t-1]
-        R_new = gamma*I[t-1]
-      
-        # Update equations
-        S[t] = S[t-1] - E_new
-        E[t] = E[t-1] + E_new - I_new
-        I[t] = I[t-1] + I_new - R_new
-        R[t] = R[t-1] + R_new
+        s[t] = s[t - 1] - e_new
+        e[t] = e[t - 1] + e_new - i_new
+        i[t] = i[t - 1] + i_new - r_new
+        r[t] = r[t - 1] + r_new
 
-    return (S, E, I, R)
+    return s, e, i, r
+
